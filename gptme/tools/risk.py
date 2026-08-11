@@ -101,6 +101,12 @@ _JSON_TOOL_OUTFILE = re.compile(
     re.IGNORECASE,
 )
 
+# `git diff --output=<file>` (git ≥2.16) redirects patch output to a file.
+# The --output flag (with = or a following argument) is a file write even though
+# `git diff` itself is read-only.  Use a permissive match that handles any flags
+# appearing between `diff` and `--output`.
+_GIT_DIFF_OUTPUT = re.compile(r"git\b.*\bdiff\b.*--output(?:=|\s+\S)", re.IGNORECASE)
+
 # Shell/bash commands whose first token indicates a safe read-only operation
 # We match the start of the command (ignoring leading whitespace and env var assignments)
 _SAFE_SHELL_CMDS = re.compile(
@@ -209,6 +215,9 @@ def _is_safe_shell_line(line: str) -> bool:
         if _JSON_TOOL_OUTFILE.search(p) or re.search(
             r"python3?\s+-m\s+json(?:\.tool)?\b.*--outfile\b", p, re.IGNORECASE
         ):
+            return False
+        # git diff --output=FILE writes the patch to a file (git ≥2.16).
+        if _GIT_DIFF_OUTPUT.search(p):
             return False
     return True
 

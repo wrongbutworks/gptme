@@ -504,6 +504,20 @@ def test_env_prefixed_git_is_not_tier1(cmd: str) -> None:
     assert result >= RiskTier.WRITE, f"Expected ≥WRITE for env-prefixed git: {cmd!r}"
 
 
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git diff --output=/tmp/patch",  # --output=FILE writes the patch to disk
+        "git diff HEAD --output=out.patch",  # flags before --output are fine
+        "git diff --output out.patch",  # space-separated form
+    ],
+)
+def test_git_diff_output_is_not_tier1(cmd: str) -> None:
+    """git diff --output=FILE writes to disk and must not be auto-approved."""
+    result = classify_tool_risk(_tu("shell", cmd))
+    assert result >= RiskTier.WRITE, f"Expected ≥WRITE for git diff --output: {cmd!r}"
+
+
 # ── RiskTier ordering ──────────────────────────────────────────────────────────
 
 
